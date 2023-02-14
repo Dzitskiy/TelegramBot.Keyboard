@@ -15,8 +15,6 @@ namespace TelegramBot.Lesson
     internal class Program
     {
         private const string _botKey = "5997563686:AAEjaMzA3Ni_jL2UZGJ9x6BQeLrHeN9pjKQ";
-        //private static List<Photo> _photos = new List<Photo>();
-        //private static string _fileName = "photos.json";
 
         public static Task HandleErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)
         {
@@ -47,12 +45,6 @@ namespace TelegramBot.Lesson
         {
             Console.WriteLine($"Receive message type: {message.Type}");
 
-            if (message.Type == MessageType.Photo)
-            {
-                await StorePhoto(botClient, message);
-                return;
-            }
-
             if (message.Type != MessageType.Text)
                 return;
 
@@ -63,30 +55,12 @@ namespace TelegramBot.Lesson
                     await StartMessage(botClient, message);
                     break;
 
-                case "найди":
-                case "Найди":
-                    await FindPhoto(botClient, message);
-                    break;
-
                 default:
                     await Echo(botClient, message);
                     break;
             }
         }
 
-        private static async Task FindPhoto(ITelegramBotClient botClient, Message message)
-        {
-            var caption = message.Text.Replace("найди ", "").Replace("Найди ", "").Trim();
-            //var photo = _photos.Find(x => x.Caption == caption);
-            //if (photo == null)
-            //{
-            //    await botClient.SendTextMessageAsync(chatId: message.Chat.Id, text: $"не удалось найти {caption}");
-            //    return;
-            //}
-
-            await botClient.SendChatActionAsync(message.Chat.Id, ChatAction.UploadPhoto);
-            //await botClient.SendPhotoAsync(chatId: message.Chat.Id, photo: new InputOnlineFile(photo.FileId));
-        }
 
         private static async Task Echo(ITelegramBotClient botClient, Message message)
         {
@@ -113,13 +87,6 @@ namespace TelegramBot.Lesson
 
             Console.WriteLine($"Start listening for @{me.Username}");
 
-            //if (System.IO.File.Exists(_fileName))
-            //{
-            //    var json = System.IO.File.ReadAllText(_fileName);
-            //    _photos = JsonSerializer.Deserialize<List<Photo>>(json);
-            //}
-            //else System.IO.File.Create(_fileName);
-
             Console.ReadLine();
 
             cts.Cancel();
@@ -129,24 +96,6 @@ namespace TelegramBot.Lesson
         {
             var userName = $"{message.From.LastName} {message.From.FirstName}";
             await botClient.SendTextMessageAsync(chatId: message.Chat.Id, text: $"Hello {userName}");
-        }
-
-        private static async Task StorePhoto(ITelegramBotClient botClient, Message message)
-        {
-            if (String.IsNullOrEmpty(message.Caption))
-            {
-                await botClient.SendTextMessageAsync(chatId: message.Chat.Id, text: $"не указан заголовок картинки");
-                return;
-            }
-            if (message.Photo.Length == 0)
-            {
-                await botClient.SendTextMessageAsync(chatId: message.Chat.Id, text: $"ошибка получения картинки");
-                return;
-            }
-
-            //_photos.Add(new Photo() { Caption = message.Caption, FileId = message.Photo[0].FileId });
-            //string jsonString = JsonSerializer.Serialize(_photos);
-            //System.IO.File.WriteAllText(_fileName, jsonString);
         }
     }
 }
