@@ -16,6 +16,8 @@ namespace TelegramBot.Lesson
     {
         private const string _botKey = "5997563686:AAEjaMzA3Ni_jL2UZGJ9x6BQeLrHeN9pjKQ";
 
+        private static List<QuizGame> _games = new List<QuizGame>();
+
         public static Task HandleErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)
         {
             var ErrorMessage = exception.ToString();
@@ -55,12 +57,23 @@ namespace TelegramBot.Lesson
                     await StartMessage(botClient, message);
                     break;
 
+                case "/startgame":
+                    await StartGame(botClient, message);
+                    break;
+
                 default:
+                    var chatId = message.Chat.Id;
+                    var  game = _games.Find(x => x.ChatId == chatId);
+                    if (game != null && !game.IsFinished)
+                    {
+                        await game.OnAnswer(message.Text);
+                        return;
+                    }
+
                     await Echo(botClient, message);
                     break;
             }
         }
-
 
         private static async Task Echo(ITelegramBotClient botClient, Message message)
         {
@@ -96,6 +109,19 @@ namespace TelegramBot.Lesson
         {
             var userName = $"{message.From.LastName} {message.From.FirstName}";
             await botClient.SendTextMessageAsync(chatId: message.Chat.Id, text: $"Hello {userName}");
+        }
+
+        private static async Task StartGame(ITelegramBotClient botClient, Message message)
+        {
+            var currentGame = _games.Find(x => x.ChatId == message.Chat.Id);
+            if (currentGame != null)
+            {
+                _games.Remove(currentGame);
+            }
+
+            var game = new QuizGame(botClient, message.Chat);
+            await game.StartAsync();
+            _games.Add(game);
         }
     }
 }
