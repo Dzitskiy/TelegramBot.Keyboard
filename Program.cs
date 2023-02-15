@@ -18,6 +18,8 @@ namespace TelegramBot.Lesson
 
         private static List<QuizGame> _games = new List<QuizGame>();
 
+        private static Schedule _schedule;
+
         public static Task HandleErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)
         {
             var ErrorMessage = exception.ToString();
@@ -33,7 +35,13 @@ namespace TelegramBot.Lesson
                 switch (update.Type)
                 {
                     case UpdateType.Message:
-                        await BotOnMessageReceived(botClient, update.Message!);
+                        await BotOnMessageReceived(botClient, update.Message);
+                        break;
+
+                    case UpdateType.CallbackQuery:
+                        if (_schedule == null)
+                            return;
+                        await _schedule.OnAnswer(update.CallbackQuery);
                         break;
                 }
             }
@@ -59,6 +67,11 @@ namespace TelegramBot.Lesson
 
                 case "/startgame":
                     await StartGame(botClient, message);
+                    break;
+
+                case "/schedule":
+                    _schedule = new Schedule(botClient, message.Chat);
+                    await _schedule.StartAsync();
                     break;
 
                 default:
