@@ -113,7 +113,10 @@ namespace TelegramBot.Lesson
             }
             else
             {
-                await _botClient.SendTextMessageAsync(_chat.Id, $"Игра завершена. Результат: {_correct}/{_questions.Count}");
+                await _botClient.SendTextMessageAsync(_chat.Id, 
+                    $"Игра завершена. Результат: {_correct}/{_questions.Count}",
+                    replyMarkup: new ReplyKeyboardRemove()
+                    );
                 IsFinished= true;   
             }
         }
