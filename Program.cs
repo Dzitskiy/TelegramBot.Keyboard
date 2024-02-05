@@ -1,20 +1,18 @@
 ﻿// See https://aka.ms/new-console-template for more information
 using System;
 using System.Collections.Generic;
-using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Telegram.Bot;
 using Telegram.Bot.Extensions.Polling;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
-using Telegram.Bot.Types.InputFiles;
 
 namespace TelegramBot.Lesson
 {
     internal class Program
     {
-        private const string _botKey = "5997563686:AAEjaMzA3Ni_jL2UZGJ9x6BQeLrHeN9pjKQ";
+        private const string _botKey = "6860575489:AAFlSPLCJouQPA_4rWRjpEHbP2hvmFmqRsM";
 
         private static List<QuizGame> _games = new List<QuizGame>();
 
@@ -28,30 +26,30 @@ namespace TelegramBot.Lesson
             return Task.CompletedTask;
         }
 
-        public static async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
+        public static void HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
         {
             try
             {
                 switch (update.Type)
                 {
                     case UpdateType.Message:
-                        await BotOnMessageReceived(botClient, update.Message);
+                         BotOnMessageReceived(botClient, update.Message);
                         break;
 
                     case UpdateType.CallbackQuery:
                         if (_schedule == null)
                             return;
-                        await _schedule.OnAnswer(update.CallbackQuery);
+                         _schedule.OnAnswer(update.CallbackQuery);
                         break;
                 }
             }
             catch (Exception exception)
             {
-                await HandleErrorAsync(botClient, exception, cancellationToken);
+                 HandleErrorAsync(botClient, exception, cancellationToken);
             }
         }
 
-        private static async Task BotOnMessageReceived(ITelegramBotClient botClient, Message message)
+        private static void BotOnMessageReceived(ITelegramBotClient botClient, Message message)
         {
             Console.WriteLine($"Receive message type: {message.Type}");
 
@@ -62,16 +60,16 @@ namespace TelegramBot.Lesson
             switch (action)
             {
                 case "/start":
-                    await StartMessage(botClient, message);
+                     StartMessage(botClient, message);
                     break;
 
                 case "/startgame":
-                    await StartGame(botClient, message);
+                     StartGame(botClient, message);
                     break;
 
                 case "/schedule":
                     _schedule = new Schedule(botClient, message.Chat);
-                    await _schedule.StartAsync();
+                     _schedule.StartAsync();
                     break;
 
                 default:
@@ -79,27 +77,27 @@ namespace TelegramBot.Lesson
                     var  game = _games.Find(x => x.ChatId == chatId);
                     if (game != null && !game.IsFinished)
                     {
-                        await game.OnAnswer(message.Text);
+                         game.OnAnswer(message.Text);
                         return;
                     }
 
-                    await Echo(botClient, message);
+                     Echo(botClient, message);
                     break;
             }
         }
 
-        private static async Task Echo(ITelegramBotClient botClient, Message message)
+        private static void Echo(ITelegramBotClient botClient, Message message)
         {
-            await botClient.SendTextMessageAsync(chatId: message.Chat.Id, text: $"{message.Text}");
+             botClient.SendTextMessageAsync(chatId: message.Chat.Id, text: $"{message.Text}");
         }
 
-        private static async Task Main()
+        private static void Main()
         {
             using var cts = new CancellationTokenSource();
 
             var bot = new TelegramBotClient(_botKey);
 
-            var me = await bot.GetMeAsync();
+            var me =  bot.GetMeAsync();
             Console.Title = me.Username ?? "My awesome Bot";
             Console.WriteLine($"My bot: {me.Username}");
 
@@ -118,13 +116,13 @@ namespace TelegramBot.Lesson
             cts.Cancel();
         }
 
-        private static async Task StartMessage(ITelegramBotClient botClient, Message message)
+        private static void StartMessage(ITelegramBotClient botClient, Message message)
         {
             var userName = $"{message.From.LastName} {message.From.FirstName}";
-            await botClient.SendTextMessageAsync(chatId: message.Chat.Id, text: $"Hello {userName}");
+             botClient.SendTextMessageAsync(chatId: message.Chat.Id, text: $"Hello {userName}");
         }
 
-        private static async Task StartGame(ITelegramBotClient botClient, Message message)
+        private static void StartGame(ITelegramBotClient botClient, Message message)
         {
             var currentGame = _games.Find(x => x.ChatId == message.Chat.Id);
             if (currentGame != null)
@@ -133,7 +131,7 @@ namespace TelegramBot.Lesson
             }
 
             var game = new QuizGame(botClient, message.Chat);
-            await game.StartAsync();
+             game.StartAsync();
             _games.Add(game);
         }
     }

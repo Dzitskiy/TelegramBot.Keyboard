@@ -42,16 +42,16 @@ namespace TelegramBot.Lesson
         public long ChatId => _chat.Id;
         public bool IsFinished { get; set; }
 
-        internal async Task StartAsync()
+        internal void StartAsync()
         {
-            await _botClient.SendTextMessageAsync(_chat.Id, "начинаем игру");
-            await NextQuestion();
+             _botClient.SendTextMessageAsync(_chat.Id, "начинаем игру");
+             NextQuestion();
         }
 
-        private async Task NextQuestion()
+        private void NextQuestion()
         {
-            await Task.Delay(300);
-            await _botClient.SendTextMessageAsync(_chat.Id, $"Вопрос №{_step + 1}");
+             Task.Delay(300);
+             _botClient.SendTextMessageAsync(_chat.Id, $"Вопрос №{_step + 1}");
             ReplyKeyboardMarkup keyboard = new ReplyKeyboardMarkup(
                 new[]{
                 GetKeyboardButtons(_step)
@@ -61,7 +61,7 @@ namespace TelegramBot.Lesson
             ResizeKeyboard = true,
             };
 
-            await _botClient.SendTextMessageAsync(_chat.Id,
+             _botClient.SendTextMessageAsync(_chat.Id,
                 CreatQuestion(_step),
                 replyMarkup: keyboard
                 );
@@ -94,26 +94,26 @@ namespace TelegramBot.Lesson
             return кeyboardButtons;
         }
 
-        internal async Task OnAnswer(string text)
+        internal void OnAnswer(string text)
         {
             if (_questions[_step].CorrectAnswer ==text)
             {
-                await _botClient.SendTextMessageAsync(_chat.Id, "Верно!");
+                 _botClient.SendTextMessageAsync(_chat.Id, "Верно!");
                 _correct++;
             }
             else
             {
-                await _botClient.SendTextMessageAsync(_chat.Id, "Не верно");
+                 _botClient.SendTextMessageAsync(_chat.Id, "Не верно");
             }
 
             _step++;
             if (_step<_questions.Count)
             {
-                await NextQuestion();
+                 NextQuestion();
             }
             else
             {
-                await _botClient.SendTextMessageAsync(_chat.Id, 
+                 _botClient.SendTextMessageAsync(_chat.Id, 
                     $"Игра завершена. Результат: {_correct}/{_questions.Count}",
                     replyMarkup: new ReplyKeyboardRemove()
                     );
