@@ -26,7 +26,7 @@ namespace TelegramBot.Lesson
             return Task.CompletedTask;
         }
 
-        public static void HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
+        public static Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
         {
             try
             {
@@ -38,7 +38,7 @@ namespace TelegramBot.Lesson
 
                     case UpdateType.CallbackQuery:
                         if (_schedule == null)
-                            return;
+                            return Task.CompletedTask;
                          _schedule.OnAnswer(update.CallbackQuery);
                         break;
                 }
@@ -47,6 +47,7 @@ namespace TelegramBot.Lesson
             {
                  HandleErrorAsync(botClient, exception, cancellationToken);
             }
+            return Task.CompletedTask;
         }
 
         private static void BotOnMessageReceived(ITelegramBotClient botClient, Message message)
@@ -98,8 +99,8 @@ namespace TelegramBot.Lesson
             var bot = new TelegramBotClient(_botKey);
 
             var me =  bot.GetMeAsync();
-            Console.Title = me.Username ?? "My awesome Bot";
-            Console.WriteLine($"My bot: {me.Username}");
+            Console.Title = me.Result.Username ?? "My awesome Bot";
+            Console.WriteLine($"My bot: {me.Result.Username}");
 
             bot.StartReceiving(updateHandler: HandleUpdateAsync,
                    errorHandler: HandleErrorAsync,
@@ -109,7 +110,7 @@ namespace TelegramBot.Lesson
                    },
                    cancellationToken: cts.Token);
 
-            Console.WriteLine($"Start listening for @{me.Username}");
+            Console.WriteLine($"Start listening for @{me.Result.Username}");
 
             Console.ReadLine();
 
