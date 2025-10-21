@@ -1,4 +1,5 @@
 ﻿// See https://aka.ms/new-console-template for more information
+using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -13,7 +14,7 @@ namespace TelegramBot.Lesson
 {
     internal class Program
     {
-        private const string _botKey = "8304123361:AAFiBvEwF5P0ZLZhlF9XkHWzuVMpOgLrWjU";
+        private string _botKey;
 
         private static List<QuizGame> _games = new List<QuizGame>();
 
@@ -108,7 +109,7 @@ namespace TelegramBot.Lesson
 
         private static async Task BotOnMessageReceived(ITelegramBotClient botClient, Message message)
         {
-            Console.WriteLine($"Receive message type: {message.Type}");
+            Console.WriteLine($"Receive message type: {message.Type}, form {message.Chat.Username} ({message.Chat.FirstName} {message.Chat.LastName}) ");
 
             if (message.Type == MessageType.Poll)
             {
@@ -172,9 +173,17 @@ namespace TelegramBot.Lesson
 
         private static async Task Main()
         {
+            var configuration = new ConfigurationBuilder()
+                .AddJsonFile("appsettings.json", true, true)
+                .Build();
+
+            string key = configuration.GetSection("Telegram:Key").Value;
+
+            Console.WriteLine(key);
+
             using var cts = new CancellationTokenSource();
 
-            var bot = new TelegramBotClient(_botKey);
+            var bot = new TelegramBotClient(key);
 
             var me = await bot.GetMe();
             Console.Title = me.Username ?? "My awesome Bot";
