@@ -21,14 +21,36 @@ namespace TelegramBot.Lesson
         private readonly List<QuizItem> _questions = new List<QuizItem>() {
             new QuizItem()
             {
-                Question = "2+2=",
-                Answers = new List<string>{"1","2","3","4", "5" },
-                CorrectAnswer = "D"
+                Question = "💬 Какие типы клавиатур поддерживает Telegram Bot API?",
+                Answers = new List<string>{ 
+                    "A) ReplyKeyboardMarkup и InlineKeyboardMarkup",
+                    "B) KeyboardMarkup и BotKeyboard",
+                    "C) MessageKeyboard и ButtonKeyboard",
+                    "D) TextKeyboard и MediaKeyboard"},
+                
+                CorrectAnswer = "A"
+
             },
             new QuizItem()
             {
-                Question = "2+2=4?",
-                Answers = new List<string> { "Да", "Нет", "Не знаю" },
+                Question = "💬  Какой класс используется для создания кнопки во встроенной (inline) клавиатуре?",
+                Answers = new List<string> {
+                    "A) KeyboardButton",
+                    "B) InlineKeyboardButton",
+                    "C) ReplyKeyboardMarkup",
+                    "D) ForceReply" },
+                
+                CorrectAnswer = "B"
+            },
+            new QuizItem()
+            {
+                Question = "💬 Как удалить пользовательскую клавиатуру после ввода сообщения?",
+                Answers = new List<string> {
+                    "A) Установить remove_keyboard = True в ReplyKeyboardRemove",
+                    "B) Отправить сообщение с параметром remove = True",
+                    "C) Использовать метод deleteKeyboard()",
+                    "D) Добавить resize_keyboard = False в ReplyKeyboardMarkup" },
+
                 CorrectAnswer = "A"
             }
         };
@@ -44,14 +66,14 @@ namespace TelegramBot.Lesson
 
         internal async Task StartAsync()
         {
-            await _botClient.SendTextMessageAsync(_chat.Id, "начинаем игру");
+            await _botClient.SendMessage(_chat.Id, "✌ начинаем игру \U0001F30D");
             await NextQuestion();
         }
 
         private async Task NextQuestion()
         {
             await Task.Delay(300);
-            await _botClient.SendTextMessageAsync(_chat.Id, $"Вопрос №{_step + 1}");
+            await _botClient.SendMessage(_chat.Id, $"Вопрос №{_step + 1}");
             ReplyKeyboardMarkup keyboard = new ReplyKeyboardMarkup(
                 new[]{
                 GetKeyboardButtons(_step)
@@ -61,7 +83,7 @@ namespace TelegramBot.Lesson
             ResizeKeyboard = true,
             };
 
-            await _botClient.SendTextMessageAsync(_chat.Id,
+            await _botClient.SendMessage(_chat.Id,
                 CreatQuestion(_step),
                 replyMarkup: keyboard
                 );
@@ -98,12 +120,13 @@ namespace TelegramBot.Lesson
         {
             if (_questions[_step].CorrectAnswer ==text)
             {
-                await _botClient.SendTextMessageAsync(_chat.Id, "Верно!");
+                await _botClient.SendMessage(_chat.Id, "Верно!");
                 _correct++;
             }
             else
             {
-                await _botClient.SendTextMessageAsync(_chat.Id, "Не верно");
+                await _botClient.SendMessage(_chat.Id, $"Не верно, правильный ответ {_questions[_step].CorrectAnswer}");
+
             }
 
             _step++;
@@ -113,11 +136,11 @@ namespace TelegramBot.Lesson
             }
             else
             {
-                await _botClient.SendTextMessageAsync(_chat.Id, 
-                    $"Игра завершена. Результат: {_correct}/{_questions.Count}",
+                await _botClient.SendMessage(_chat.Id, 
+                    $" Игра завершена. Результат: {_correct}/{_questions.Count}",
                     replyMarkup: new ReplyKeyboardRemove()
                     );
-                IsFinished= true;   
+                IsFinished = true;   
             }
         }
     }

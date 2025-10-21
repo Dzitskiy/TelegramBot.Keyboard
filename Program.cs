@@ -1,24 +1,24 @@
 ﻿// See https://aka.ms/new-console-template for more information
 using System;
 using System.Collections.Generic;
-using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Telegram.Bot;
-using Telegram.Bot.Extensions.Polling;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
-using Telegram.Bot.Types.InputFiles;
+using Telegram.CalendarKit;
+//using Telegram.Bot.Extensions.Polling;
 
 namespace TelegramBot.Lesson
 {
     internal class Program
     {
-        private const string _botKey = "5997563686:AAEjaMzA3Ni_jL2UZGJ9x6BQeLrHeN9pjKQ";
+        private const string _botKey = "8304123361:AAFiBvEwF5P0ZLZhlF9XkHWzuVMpOgLrWjU";
 
         private static List<QuizGame> _games = new List<QuizGame>();
 
         private static Schedule _schedule;
+
 
         public static Task HandleErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)
         {
@@ -39,9 +39,8 @@ namespace TelegramBot.Lesson
                         break;
 
                     case UpdateType.CallbackQuery:
-                        if (_schedule == null)
-                            return;
-                        await _schedule.OnAnswer(update.CallbackQuery);
+
+                        await BotOnCallbackQueryReceived(botClient, update.CallbackQuery);
                         break;
                 }
             }
@@ -51,10 +50,83 @@ namespace TelegramBot.Lesson
             }
         }
 
+        private static async Task BotOnCallbackQueryReceived(ITelegramBotClient botClient, CallbackQuery callbackQuery)
+        {
+            var data = callbackQuery.Data;
+            var message = callbackQuery.Message;
+
+            var parts = data.Split(':');
+            if (parts[0] == "calendar")
+            {
+                var action = parts[1];
+                var param = parts[2];
+
+                switch (action)
+                {
+                    case "day":
+                        var selectedDate = DateTime.Parse(param);
+                        await botClient.AnswerCallbackQuery(callbackQuery.Id, $"⏰ Вы выбрали дату: {selectedDate.ToShortDateString()}");
+                        //TODO: Сохранить выбранную дату и продолжить процесс планирования
+                        break;
+                    case "next":
+                    case "prev":
+
+                        //TODO: Вычислить следующий или предыдущий месяц и обновить календарь
+                        var yearMonth = param.Split('-');
+                        var year = int.Parse(yearMonth[0]);
+                        var month = int.Parse(yearMonth[1]);
+
+                        var newDate  = new DateTime(year, month, 1);
+                        if (action == "next")
+                        {
+                            newDate = newDate.AddMonths(1);
+                        }
+                        else if (action == "prev")
+                        {
+                            newDate = newDate.AddMonths(-1);
+                        }
+
+                        var newMarkup = new CalendarBuilder().GenerateCalendarButtons(
+                            newDate.Year,
+                            newDate.Month,
+                            Telegram.CalendarKit.Models.Enums.CalendarViewType.Default);
+
+                        await botClient.EditMessageReplyMarkup(
+                            chatId: message.Chat.Id,
+                            messageId: message.MessageId,
+                            replyMarkup: newMarkup
+                        );
+                        break;
+                }
+            }
+
+            // Если не от календаря, то передаем обработку в Schedule
+            if (_schedule == null)
+                return;
+            await _schedule.OnAnswer(callbackQuery);
+        }
+
         private static async Task BotOnMessageReceived(ITelegramBotClient botClient, Message message)
         {
             Console.WriteLine($"Receive message type: {message.Type}");
 
+            if (message.Type == MessageType.Poll)
+            {
+                var t = message.Poll;
+
+                Console.WriteLine($"Создан опрос с вопросом: {t.Question}");
+
+
+                //await botClient.SendTextMessageAsync(chatId: message.Chat.Id,
+                //    text: $"Переданы координаты: {message.Venue.Location.Latitude}:{message.Venue.Location.Longitude}");
+            }
+
+            if (message.Type == MessageType.Location)
+            {
+                await botClient.SendMessage(chatId: message.Chat.Id, 
+                    text: $"Переданы координаты: {message.Location.Latitude}:{message.Location.Longitude}");
+            }
+     
             if (message.Type != MessageType.Text)
                 return;
 
@@ -74,6 +146,11 @@ namespace TelegramBot.Lesson
                     await _schedule.StartAsync();
                     break;
 
+                case "/calendar":
+                    var _calendar = new Calendar(botClient, message.Chat);
+                    await _calendar.ShowCalendarAsync();
+                    break;
+
                 default:
                     var chatId = message.Chat.Id;
                     var  game = _games.Find(x => x.ChatId == chatId);
@@ -90,7 +167,7 @@ namespace TelegramBot.Lesson
 
         private static async Task Echo(ITelegramBotClient botClient, Message message)
         {
-            await botClient.SendTextMessageAsync(chatId: message.Chat.Id, text: $"{message.Text}");
+            await botClient.SendMessage(chatId: message.Chat.Id, text: $"{message.Text}");
         }
 
         private static async Task Main()
@@ -99,19 +176,28 @@ namespace TelegramBot.Lesson
 
             var bot = new TelegramBotClient(_botKey);
 
-            var me = await bot.GetMeAsync();
+            var me = await bot.GetMe();
             Console.Title = me.Username ?? "My awesome Bot";
             Console.WriteLine($"My bot: {me.Username}");
 
-            bot.StartReceiving(updateHandler: HandleUpdateAsync,
-                   errorHandler: HandleErrorAsync,
-                   receiverOptions: new ReceiverOptions()
-                   {
-                       AllowedUpdates = Array.Empty<UpdateType>()
-                   },
-                   cancellationToken: cts.Token);
+            // Создаем список команд
+            var commands = new List<BotCommand>
+            {
+                new BotCommand { Command = "start", Description = "Запустить бота" },
+                new BotCommand { Command = "startgame", Description = "Запустить квиз" },
+                new BotCommand { Command = "schedule", Description = "Запланировать событие" },
+                new BotCommand { Command = "calendar", Description = "Вызвать календарь" }
+            };
+            bot.SetMyCommands(commands);
+
+            bot.StartReceiving(
+                updateHandler: HandleUpdateAsync,
+                errorHandler: HandleErrorAsync,
+                cancellationToken: cts.Token);
 
             Console.WriteLine($"Start listening for @{me.Username}");
+
+            
 
             Console.ReadLine();
 
@@ -120,8 +206,9 @@ namespace TelegramBot.Lesson
 
         private static async Task StartMessage(ITelegramBotClient botClient, Message message)
         {
+
             var userName = $"{message.From.LastName} {message.From.FirstName}";
-            await botClient.SendTextMessageAsync(chatId: message.Chat.Id, text: $"Hello {userName}");
+            await botClient.SendMessage(chatId: message.Chat.Id, text: $"Hello {userName}, ChatId: {message.Chat.Id}");
         }
 
         private static async Task StartGame(ITelegramBotClient botClient, Message message)

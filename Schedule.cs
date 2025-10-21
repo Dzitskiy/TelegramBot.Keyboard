@@ -43,7 +43,7 @@ namespace TelegramBot.Lesson
                 }
                 );
 
-            await _botClient.SendTextMessageAsync(_chat.Id,
+            await _botClient.SendMessage(_chat.Id,
                     $"Inline кнопки",
                     replyMarkup: inlineKeyboard);
         }
@@ -67,8 +67,8 @@ namespace TelegramBot.Lesson
                         }
                     );
 
-                    await _botClient.AnswerCallbackQueryAsync(callbackQuery.Id, "");
-                    await _botClient.SendTextMessageAsync(_chat.Id,
+                    await _botClient.AnswerCallbackQuery(callbackQuery.Id, "");
+                    await _botClient.SendMessage(_chat.Id,
                             $"Выберите день",
                             replyMarkup: inlineKeyboard);
                     break;
@@ -83,15 +83,15 @@ namespace TelegramBot.Lesson
                                 InlineKeyboardButton.WithCallbackData("День", "complete"),
                                 InlineKeyboardButton.WithCallbackData("Вечер", "complete")
                             },
-                            new[]
+                            new[] 
                             {
                                 InlineKeyboardButton.WithCallbackData("Отменить", "stop")
                             }
                         }
                     );
 
-                    await _botClient.AnswerCallbackQueryAsync(callbackQuery.Id, "");
-                    await _botClient.EditMessageTextAsync(chatId: _chat.Id,
+                    await _botClient.AnswerCallbackQuery(callbackQuery.Id, "");
+                    await _botClient.EditMessageText(chatId: _chat.Id,
                             messageId: callbackQuery.Message.MessageId,
                             $"Когда вам удобно",
                             replyMarkup: keysStep2);
@@ -99,15 +99,15 @@ namespace TelegramBot.Lesson
 
                 case "complete":
                     IsFinished = true;
-                    await _botClient.AnswerCallbackQueryAsync(callbackQuery.Id, "Отлично! До встречи!");
-                    await _botClient.EditMessageTextAsync(chatId: _chat.Id,
+                    await _botClient.AnswerCallbackQuery(callbackQuery.Id, "Отлично! До встречи!");
+                    await _botClient.EditMessageText(chatId: _chat.Id,
                             messageId: callbackQuery.Message.MessageId,
                             $"Выбор сделан");
                     break;
 
                 case "stop":
                     IsFinished = true;
-                    await _botClient.AnswerCallbackQueryAsync(callbackQuery.Id, "Вы прервали выбор. Ждем вас снова", true);
+                    await _botClient.AnswerCallbackQuery(callbackQuery.Id, "Вы прервали выбор. Ждем вас снова", true);
                     break;
             }
         }
